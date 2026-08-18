@@ -1,48 +1,79 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>docuqa — RAG document Q&A</title>
+  <title>docuqa — 文档问答</title>
   <style>
     :root {
-      --bg: #0f1117;
-      --panel: #171a23;
-      --border: #2a2f3a;
-      --text: #e6e8ee;
-      --muted: #9aa1b0;
-      --accent: #5b8cff;
-      --accent-strong: #3f74ff;
-      --ok: #2ecc71;
-      --err: #ff6b6b;
+      --bg: #f5f6f8;
+      --panel: #ffffff;
+      --border: #e2e5ea;
+      --text: #1f2329;
+      --muted: #6b7280;
+      --accent: #3b6ef5;
+      --accent-hover: #2f5ad0;
+      --ok: #16a34a;
+      --err: #dc2626;
+      --radius: 12px;
+      --shadow: 0 1px 2px rgba(16, 24, 40, 0.05), 0 1px 3px rgba(16, 24, 40, 0.08);
     }
     * { box-sizing: border-box; }
     body {
       margin: 0;
-      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+        "Microsoft YaHei", Roboto, Helvetica, Arial, sans-serif;
       background: var(--bg);
       color: var(--text);
-      line-height: 1.5;
+      line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
     }
     header {
-      padding: 28px 32px 12px;
+      background: var(--panel);
       border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 10;
     }
-    header h1 { margin: 0; font-size: 24px; letter-spacing: -0.02em; }
-    header p { margin: 4px 0 0; color: var(--muted); font-size: 14px; }
-    main { max-width: 860px; margin: 0 auto; padding: 24px 32px 64px; }
+    .header-inner {
+      max-width: 880px;
+      margin: 0 auto;
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .brand h1 { margin: 0; font-size: 20px; letter-spacing: -0.01em; }
+    .brand p { margin: 2px 0 0; color: var(--muted); font-size: 13px; }
+    .lang-toggle {
+      border: 1px solid var(--border);
+      background: var(--panel);
+      color: var(--text);
+      border-radius: 8px;
+      padding: 7px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .lang-toggle:hover { border-color: var(--accent); color: var(--accent); }
+    main { max-width: 880px; margin: 0 auto; padding: 24px 24px 72px; }
     .card {
       background: var(--panel);
       border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 20px;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 22px;
       margin-bottom: 20px;
     }
-    .card h2 { margin: 0 0 12px; font-size: 15px; font-weight: 600; }
+    .card h2 { margin: 0 0 14px; font-size: 16px; font-weight: 650; }
     label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
-    input[type="text"], textarea {
+    .field-row { display: flex; gap: 10px; }
+    .field-row > input { flex: 1; }
+    input[type="text"] {
       width: 100%;
-      background: #0c0e13;
+      background: #fbfbfd;
       border: 1px solid var(--border);
       border-radius: 8px;
       color: var(--text);
@@ -50,172 +81,347 @@
       font-size: 14px;
       font-family: inherit;
     }
-    input[type="text"]:focus, textarea:focus {
-      outline: none;
-      border-color: var(--accent);
-    }
-    .row { display: flex; gap: 8px; align-items: flex-end; }
-    .row > :first-child { flex: 1; }
-    button {
+    input[type="text"]:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(59, 110, 245, 0.15); }
+    button.primary {
       background: var(--accent);
       color: #fff;
       border: none;
       border-radius: 8px;
-      padding: 10px 18px;
+      padding: 10px 20px;
       font-size: 14px;
       font-weight: 600;
       cursor: pointer;
       white-space: nowrap;
     }
-    button:hover { background: var(--accent-strong); }
-    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    button.primary:hover { background: var(--accent-hover); }
+    button.primary:disabled { opacity: 0.55; cursor: not-allowed; }
+    .status { font-size: 13px; margin-top: 10px; min-height: 18px; }
+    .status.ok { color: var(--ok); }
+    .status.err { color: var(--err); }
+    .status.info { color: var(--muted); }
+    .muted { color: var(--muted); font-size: 13px; }
+    .spinner {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .spinner::before {
+      content: "";
+      width: 14px;
+      height: 14px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      flex: none;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .answer-label { font-size: 13px; color: var(--muted); margin-top: 18px; }
     .answer {
-      background: #0c0e13;
+      background: #fbfbfd;
       border: 1px solid var(--border);
       border-radius: 8px;
       padding: 14px;
       white-space: pre-wrap;
       word-break: break-word;
       font-size: 14px;
+      margin-top: 6px;
     }
-    .sources { list-style: none; padding: 0; margin: 16px 0 0; }
-    .sources li {
-      border-top: 1px solid var(--border);
-      padding: 10px 0;
-      font-size: 13px;
-    }
+    .sources-label { font-size: 13px; color: var(--muted); margin-top: 16px; }
+    .sources { list-style: none; padding: 0; margin: 8px 0 0; }
+    .sources li { border-top: 1px solid var(--border); padding: 10px 0; font-size: 13px; }
     .sources .meta { color: var(--muted); margin-bottom: 4px; }
     .sources .score { color: var(--accent); font-weight: 600; }
-    .sources .text { color: var(--text); opacity: 0.85; }
-    .muted { color: var(--muted); font-size: 13px; }
-    .status { font-size: 13px; margin-top: 8px; }
-    .status.ok { color: var(--ok); }
-    .status.err { color: var(--err); }
-    #stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; }
-    #stats .stat { background: #0c0e13; border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
-    #stats .stat .k { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
-    #stats .stat .v { font-size: 16px; font-weight: 600; margin-top: 2px; }
-    .spinner { display: none; margin-top: 10px; color: var(--muted); font-size: 13px; }
+    .sources .text { color: var(--text); opacity: 0.82; }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+    .stat { background: #fbfbfd; border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; }
+    .stat .k { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
+    .stat .v { font-size: 15px; font-weight: 650; margin-top: 3px; word-break: break-all; }
+    @media (max-width: 560px) {
+      .field-row { flex-direction: column; }
+      .header-inner { padding: 12px 16px; }
+      main { padding: 16px 16px 56px; }
+    }
   </style>
 </head>
 <body>
   <header>
-    <h1>docuqa</h1>
-    <p>Retrieval-Augmented Generation document Q&A</p>
+    <div class="header-inner">
+      <div class="brand">
+        <h1>docuqa</h1>
+        <p id="subtitle"></p>
+      </div>
+      <button id="lang-toggle" class="lang-toggle" type="button"></button>
+    </div>
   </header>
 
   <main>
-    <div class="card">
-      <h2>Index</h2>
-      <div class="row">
-        <div>
-          <label for="ingest-path">File or directory to index</label>
-          <input type="text" id="ingest-path" placeholder="examples or /path/to/notes.pdf" />
-        </div>
-        <button id="ingest-btn">Index</button>
+    <section class="card">
+      <h2 data-i18n="indexHeading"></h2>
+      <label data-i18n="indexLabel" for="ingest-path"></label>
+      <div class="field-row">
+        <input type="text" id="ingest-path" data-i18n-placeholder="indexPlaceholder" />
+        <button class="primary" id="ingest-btn" type="button" data-i18n="indexBtn"></button>
       </div>
+      <div class="spinner" id="ingest-spinner" data-i18n="indexing"></div>
       <div class="status" id="ingest-status"></div>
-    </div>
+    </section>
 
-    <div class="card">
-      <h2>Ask</h2>
-      <div class="row">
-        <div>
-          <label for="question">Question</label>
-          <input type="text" id="question" placeholder="Ask a question about your documents…" />
-        </div>
-        <button id="ask-btn">Ask</button>
+    <section class="card">
+      <h2 data-i18n="askHeading"></h2>
+      <label data-i18n="questionLabel" for="question"></label>
+      <div class="field-row">
+        <input type="text" id="question" data-i18n-placeholder="questionPlaceholder" />
+        <button class="primary" id="ask-btn" type="button" data-i18n="askBtn"></button>
       </div>
-      <div class="spinner" id="spinner">Generating answer…</div>
+      <div class="spinner" id="ask-spinner" data-i18n="generating"></div>
       <div class="status" id="ask-status"></div>
-      <div id="answer-area" style="display:none;">
-        <label style="margin-top:16px;">Answer</label>
+      <div id="answer-area" hidden>
+        <div class="answer-label" data-i18n="answerLabel"></div>
         <div class="answer" id="answer-text"></div>
+        <div class="sources-label" data-i18n="sourcesLabel"></div>
         <ul class="sources" id="sources"></ul>
       </div>
-    </div>
+    </section>
 
-    <div class="card">
-      <h2>Index stats</h2>
-      <div id="stats" class="muted">Loading…</div>
-    </div>
+    <section class="card">
+      <h2 data-i18n="statsHeading"></h2>
+      <div id="stats" class="stats-grid"></div>
+    </section>
   </main>
 
   <script>
+    const I18N = {
+      zh: {
+        subtitle: "检索增强生成 · 文档问答",
+        langToggle: "English",
+        indexHeading: "索引",
+        indexLabel: "要索引的文件或目录",
+        indexPlaceholder: "例如 examples 或 C:\\path\\to\\docs",
+        indexBtn: "索引",
+        askHeading: "提问",
+        questionLabel: "问题",
+        questionPlaceholder: "针对你的文档提问…",
+        askBtn: "提问",
+        answerLabel: "答案",
+        sourcesLabel: "引用来源",
+        statsHeading: "索引统计",
+        indexing: "正在索引…",
+        generating: "正在生成答案…",
+        statsLoading: "加载中…",
+        indexed: (p) => {
+          const replaced = p.replaced ? `，${p.replaced} 个已更新` : "";
+          return `已索引 ${p.chunks} 个分块，来自 ${p.documents} 个文档${replaced}`;
+        },
+        ingestError: "索引失败：",
+        askError: "提问失败：",
+        noIndex: "还没有索引，请先在上方输入路径并点击「索引」。",
+        emptyStats: "暂无索引数据",
+        statLabels: {
+          index_dir: "索引目录",
+          chunks: "分块数",
+          chunk_size: "分块大小",
+          chunk_overlap: "分块重叠",
+          top_k: "检索数量 (Top-k)",
+          embedder: "嵌入后端",
+          llm: "生成后端",
+        },
+        backends: { local: "本地", hashing: "哈希（演示）", mock: "模拟（演示）" },
+      },
+      en: {
+        subtitle: "Retrieval-Augmented Generation document Q&A",
+        langToggle: "中文",
+        indexHeading: "Index",
+        indexLabel: "File or directory to index",
+        indexPlaceholder: "e.g. examples or /path/to/docs",
+        indexBtn: "Index",
+        askHeading: "Ask",
+        questionLabel: "Question",
+        questionPlaceholder: "Ask a question about your documents…",
+        askBtn: "Ask",
+        answerLabel: "Answer",
+        sourcesLabel: "Sources",
+        statsHeading: "Index stats",
+        indexing: "Indexing…",
+        generating: "Generating answer…",
+        statsLoading: "Loading…",
+        indexed: (p) => {
+          const replaced = p.replaced ? `, ${p.replaced} replaced` : "";
+          return `Indexed ${p.chunks} chunks from ${p.documents} document(s)${replaced}`;
+        },
+        ingestError: "Index failed: ",
+        askError: "Ask failed: ",
+        noIndex: "No index yet. Index some documents first, then ask.",
+        emptyStats: "No index data",
+        statLabels: {
+          index_dir: "Index dir",
+          chunks: "Chunks",
+          chunk_size: "Chunk size",
+          chunk_overlap: "Chunk overlap",
+          top_k: "Top-k",
+          embedder: "Embedder",
+          llm: "LLM",
+        },
+        backends: {},
+      },
+    };
+
     const $ = (id) => document.getElementById(id);
+    let lang = "zh";
+    let chunkCount = 0;
+
+    function detectLang() {
+      const saved = localStorage.getItem("docuqa.lang");
+      if (saved === "zh" || saved === "en") return saved;
+      return (navigator.language || "en").toLowerCase().startsWith("zh") ? "zh" : "en";
+    }
+
+    function t(key) {
+      return I18N[lang][key];
+    }
+
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>"']/g, (c) => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+      }[c]));
+    }
+
+    function backendLabel(value) {
+      const zh = I18N.zh.backends[value];
+      return lang === "zh" && zh ? zh : value;
+    }
+
+    function applyLanguage() {
+      document.documentElement.lang = lang;
+      document.title = "docuqa — " + (lang === "zh" ? "文档问答" : "Document Q&A");
+      $("subtitle").textContent = t("subtitle");
+      $("lang-toggle").textContent = t("langToggle");
+      document.querySelectorAll("[data-i18n]").forEach((el) => {
+        el.textContent = t(el.getAttribute("data-i18n"));
+      });
+      document.querySelectorAll("[data-i18n-placeholder]").forEach((el) => {
+        el.placeholder = t(el.getAttribute("data-i18n-placeholder"));
+      });
+      $("ingest-spinner").textContent = t("indexing");
+      $("ask-spinner").textContent = t("generating");
+      renderStats();
+    }
 
     async function api(path, body) {
-      const options = body ? {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      } : {};
+      const options = body
+        ? {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          }
+        : {};
       const res = await fetch(path, options);
-      if (!res.ok) throw new Error((await res.text()) || `HTTP ${res.status}`);
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || `HTTP ${res.status}`);
+      }
       return res.json();
+    }
+
+    function setStatus(el, cls, text) {
+      el.className = "status " + cls;
+      el.textContent = text;
     }
 
     async function refreshStats() {
       try {
-        const s = await api("/api/stats");
-        $("stats").innerHTML = Object.entries(s)
-          .map(([k, v]) => `<div class="stat"><div class="k">${k}</div><div class="v">${v}</div></div>`)
-          .join("");
+        const stats = await api("/api/stats");
+        window._stats = stats;
+        chunkCount = stats.chunks || 0;
+        renderStats();
       } catch (e) {
-        $("stats").textContent = "Could not load stats.";
+        $("stats").innerHTML = `<div class="muted">${escapeHtml(t("emptyStats"))}</div>`;
       }
     }
 
-    function setStatus(el, msg, ok) {
-      el.textContent = msg;
-      el.className = "status " + (ok ? "ok" : "err");
+    function renderStats() {
+      const stats = window._stats;
+      if (!stats) {
+        $("stats").innerHTML = `<div class="muted">${escapeHtml(t("statsLoading"))}</div>`;
+        return;
+      }
+      const labels = t("statLabels");
+      $("stats").innerHTML = Object.entries(stats)
+        .map(([k, v]) => {
+          const label = labels[k] || k;
+          const value = ["embedder", "llm"].includes(k) ? backendLabel(v) : v;
+          return `<div class="stat"><div class="k">${escapeHtml(label)}</div><div class="v">${escapeHtml(value)}</div></div>`;
+        })
+        .join("");
+    }
+
+    function setBusy(button, spinner, busy) {
+      button.disabled = busy;
+      spinner.style.display = busy ? "flex" : "none";
     }
 
     $("ingest-btn").addEventListener("click", async () => {
       const path = $("ingest-path").value.trim();
-      if (!path) return;
-      const btn = $("ingest-btn");
-      btn.disabled = true;
-      setStatus($("ingest-status"), "Indexing…", false);
+      if (!path) {
+        setStatus($("ingest-status"), "err", t("ingestError") + " " + t("indexLabel"));
+        return;
+      }
+      setBusy($("ingest-btn"), $("ingest-spinner"), true);
+      setStatus($("ingest-status"), "info", t("indexing"));
       try {
-        const r = await api("/api/ingest", { path });
-        setStatus($("ingest-status"), `Indexed ${r.chunks} chunks from ${r.documents} document(s).`, true);
-        refreshStats();
+        const result = await api("/api/ingest", { path });
+        setStatus($("ingest-status"), "ok", t("indexed")(result));
+        await refreshStats();
       } catch (e) {
-        setStatus($("ingest-status"), "Error: " + e.message, false);
+        setStatus($("ingest-status"), "err", t("ingestError") + " " + e.message);
       } finally {
-        btn.disabled = false;
+        setBusy($("ingest-btn"), $("ingest-spinner"), false);
       }
     });
-
-    $("ask-btn").addEventListener("click", ask);
-    $("question").addEventListener("keydown", (e) => { if (e.key === "Enter") ask(); });
 
     async function ask() {
       const question = $("question").value.trim();
       if (!question) return;
-      const btn = $("ask-btn");
-      btn.disabled = true;
-      $("spinner").style.display = "block";
-      setStatus($("ask-status"), "", false);
+      if (chunkCount === 0) {
+        setStatus($("ask-status"), "info", t("noIndex"));
+        return;
+      }
+      setBusy($("ask-btn"), $("ask-spinner"), true);
+      setStatus($("ask-status"), "info", "");
       try {
-        const r = await api("/api/ask", { question });
-        $("answer-text").textContent = r.answer;
-        $("sources").innerHTML = (r.sources || []).map((s, i) => `
-          <li>
-            <div class="meta">[${i + 1}] <span class="score">${s.score.toFixed(3)}</span> — ${s.source}</div>
-            <div class="text">${s.text.slice(0, 300)}</div>
-          </li>`).join("");
-        $("answer-area").style.display = "block";
-        setStatus($("ask-status"), "", true);
+        const result = await api("/api/ask", { question });
+        $("answer-text").textContent = result.answer || "";
+        $("sources").innerHTML = (result.sources || [])
+          .map((s, i) => {
+            const score = typeof s.score === "number" ? s.score.toFixed(3) : s.score;
+            return `<li><div class="meta">[${i + 1}] <span class="score">${escapeHtml(score)}</span> — ${escapeHtml(s.source)}</div><div class="text">${escapeHtml((s.text || "").slice(0, 300))}</div></li>`;
+          })
+          .join("");
+        $("answer-area").hidden = false;
+        setStatus($("ask-status"), "ok", "");
       } catch (e) {
-        setStatus($("ask-status"), "Error: " + e.message, false);
+        setStatus($("ask-status"), "err", t("askError") + " " + e.message);
       } finally {
-        btn.disabled = false;
-        $("spinner").style.display = "none";
+        setBusy($("ask-btn"), $("ask-spinner"), false);
       }
     }
 
+    $("ask-btn").addEventListener("click", ask);
+    $("question").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") ask();
+    });
+
+    $("lang-toggle").addEventListener("click", () => {
+      lang = lang === "zh" ? "en" : "zh";
+      localStorage.setItem("docuqa.lang", lang);
+      applyLanguage();
+    });
+
+    lang = detectLang();
+    applyLanguage();
     refreshStats();
   </script>
 </body>
