@@ -35,7 +35,7 @@ def test_unsupported_file_raises(tmp_path):
 
 
 def test_load_bytes_decodes_utf8():
-    document = DocumentLoader().load_bytes("你好".encode("utf-8"), "a.md")
+    document = DocumentLoader().load_bytes("你好".encode(), "a.md")
     assert document.source == "a.md"
     assert document.content == "你好"
 

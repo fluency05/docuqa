@@ -166,12 +166,13 @@ def web(
 ) -> None:
     """Launch the browser-based web UI."""
     try:
-        import uvicorn  # noqa: F401
+        import uvicorn
+
         from .web import create_app
     except ImportError:
         console.print("[red]The web UI requires fastapi and uvicorn.[/red]")
         console.print('Install them with: pip install -e ".[web]"', markup=False)
-        raise typer.Exit(code=1)
+        raise typer.Exit(code=1) from None
     pipeline = _build_pipeline(offline)
     app = create_app(pipeline)
     console.print(f"[green]Serving docuqa at[/green] http://{host}:{port}")
