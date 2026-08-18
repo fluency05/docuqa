@@ -7,8 +7,8 @@ from pathlib import Path
 
 from .chunker import TextChunker
 from .config import Config
-from .embedder import HashingEmbedder, OpenAIEmbedder
-from .llm import MockLLM, OpenAILLM
+from .embedder import Embedder, HashingEmbedder, LocalEmbedder, OpenAIEmbedder
+from .llm import LLM, MockLLM, OllamaLLM, OpenAILLM
 from .loader import DocumentLoader
 from .retriever import Retriever
 from .store import InMemoryVectorStore
@@ -24,22 +24,36 @@ class IngestReport:
 
 
 class RAGPipeline:
-    """End-to-end RAG pipeline: ingest documents once, then answer questions."""
+    """End-to-end RAG pipeline: ingest documents once, then answer questions.
 
-    def __init__(self, config: Config, *, offline: bool = False) -> None:
+    The embedder and LLM backends are chosen from :class:`Config`:
+    ``openai``/``local``/``hashing`` and ``openai``/``ollama``/``mock``.
+    """
+
+    def __init__(self, config: Config) -> None:
         self.config = config
         self.loader = DocumentLoader()
         self.chunker = TextChunker(chunk_size=config.chunk_size, overlap=config.chunk_overlap)
         self.store = InMemoryVectorStore.load(config.index_dir)
-
-        if offline:
-            self.embedder = HashingEmbedder()
-            self.llm = MockLLM()
-        else:
-            self.embedder = OpenAIEmbedder(config.embedding_model, config.api_key, config.base_url)
-            self.llm = OpenAILLM(config.llm_model, config.api_key, config.base_url)
-
+        self.embedder = self._build_embedder(config)
+        self.llm = self._build_llm(config)
         self.retriever = Retriever(self.embedder, self.store, self.chunker, top_k=config.top_k)
+
+    @staticmethod
+    def _build_embedder(config: Config) -> Embedder:
+        if config.embedder == "hashing":
+            return HashingEmbedder()
+        if config.embedder == "local":
+            return LocalEmbedder(config.local_embedding_model)
+        return OpenAIEmbedder(config.embedding_model, config.api_key, config.base_url)
+
+    @staticmethod
+    def _build_llm(config: Config) -> LLM:
+        if config.llm == "mock":
+            return MockLLM()
+        if config.llm == "ollama":
+            return OllamaLLM(config.ollama_model, config.ollama_base_url)
+        return OpenAILLM(config.llm_model, config.api_key, config.base_url)
 
     def ingest(self, paths: list[str | Path]) -> IngestReport:
         """Load, chunk, embed, and persist documents found at ``paths``."""
@@ -64,4 +78,6 @@ class RAGPipeline:
             "chunk_size": self.config.chunk_size,
             "chunk_overlap": self.config.chunk_overlap,
             "top_k": self.config.top_k,
+            "embedder": self.config.embedder,
+            "llm": self.config.llm,
         }

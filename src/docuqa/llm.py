@@ -52,6 +52,36 @@ class OpenAILLM:
         return (response.choices[0].message.content or "").strip()
 
 
+class OllamaLLM:
+    """Answer questions with a local model served by `Ollama <https://ollama.com>`_.
+
+    Requires the ``ollama`` package (``pip install -e ".[local]"``) and a running
+    Ollama server. Data never leaves your machine.
+    """
+
+    def __init__(self, model: str = "llama3.2", base_url: str = "http://localhost:11434") -> None:
+        try:
+            import ollama
+        except ImportError as exc:
+            raise ImportError(
+                "Ollama support requires the 'ollama' package. "
+                'Install it with: pip install -e ".[local]"'
+            ) from exc
+        self.model = model
+        self._client = ollama.Client(host=base_url)
+
+    def answer(self, question: str, results: list[SearchResult]) -> str:
+        prompt = build_prompt(question, results)
+        response = self._client.chat(
+            model=self.model,
+            messages=[
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": prompt},
+            ],
+        )
+        return (response["message"]["content"] or "").strip()
+
+
 class MockLLM:
     """Offline stand-in that echoes the top retrieved passage. For demos/tests."""
 

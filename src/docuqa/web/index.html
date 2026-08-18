@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>docuqa — RAG document Q&A</title>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --panel: #171a23;
+      --border: #2a2f3a;
+      --text: #e6e8ee;
+      --muted: #9aa1b0;
+      --accent: #5b8cff;
+      --accent-strong: #3f74ff;
+      --ok: #2ecc71;
+      --err: #ff6b6b;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+    header {
+      padding: 28px 32px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    header h1 { margin: 0; font-size: 24px; letter-spacing: -0.02em; }
+    header p { margin: 4px 0 0; color: var(--muted); font-size: 14px; }
+    main { max-width: 860px; margin: 0 auto; padding: 24px 32px 64px; }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .card h2 { margin: 0 0 12px; font-size: 15px; font-weight: 600; }
+    label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+    input[type="text"], textarea {
+      width: 100%;
+      background: #0c0e13;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      padding: 10px 12px;
+      font-size: 14px;
+      font-family: inherit;
+    }
+    input[type="text"]:focus, textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+    .row { display: flex; gap: 8px; align-items: flex-end; }
+    .row > :first-child { flex: 1; }
+    button {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 18px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    button:hover { background: var(--accent-strong); }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .answer {
+      background: #0c0e13;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-size: 14px;
+    }
+    .sources { list-style: none; padding: 0; margin: 16px 0 0; }
+    .sources li {
+      border-top: 1px solid var(--border);
+      padding: 10px 0;
+      font-size: 13px;
+    }
+    .sources .meta { color: var(--muted); margin-bottom: 4px; }
+    .sources .score { color: var(--accent); font-weight: 600; }
+    .sources .text { color: var(--text); opacity: 0.85; }
+    .muted { color: var(--muted); font-size: 13px; }
+    .status { font-size: 13px; margin-top: 8px; }
+    .status.ok { color: var(--ok); }
+    .status.err { color: var(--err); }
+    #stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; }
+    #stats .stat { background: #0c0e13; border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+    #stats .stat .k { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
+    #stats .stat .v { font-size: 16px; font-weight: 600; margin-top: 2px; }
+    .spinner { display: none; margin-top: 10px; color: var(--muted); font-size: 13px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>docuqa</h1>
+    <p>Retrieval-Augmented Generation document Q&A</p>
+  </header>
+
+  <main>
+    <div class="card">
+      <h2>Index</h2>
+      <div class="row">
+        <div>
+          <label for="ingest-path">File or directory to index</label>
+          <input type="text" id="ingest-path" placeholder="examples or /path/to/notes.pdf" />
+        </div>
+        <button id="ingest-btn">Index</button>
+      </div>
+      <div class="status" id="ingest-status"></div>
+    </div>
+
+    <div class="card">
+      <h2>Ask</h2>
+      <div class="row">
+        <div>
+          <label for="question">Question</label>
+          <input type="text" id="question" placeholder="Ask a question about your documents…" />
+        </div>
+        <button id="ask-btn">Ask</button>
+      </div>
+      <div class="spinner" id="spinner">Generating answer…</div>
+      <div class="status" id="ask-status"></div>
+      <div id="answer-area" style="display:none;">
+        <label style="margin-top:16px;">Answer</label>
+        <div class="answer" id="answer-text"></div>
+        <ul class="sources" id="sources"></ul>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Index stats</h2>
+      <div id="stats" class="muted">Loading…</div>
+    </div>
+  </main>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+
+    async function api(path, body) {
+      const options = body ? {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      } : {};
+      const res = await fetch(path, options);
+      if (!res.ok) throw new Error((await res.text()) || `HTTP ${res.status}`);
+      return res.json();
+    }
+
+    async function refreshStats() {
+      try {
+        const s = await api("/api/stats");
+        $("stats").innerHTML = Object.entries(s)
+          .map(([k, v]) => `<div class="stat"><div class="k">${k}</div><div class="v">${v}</div></div>`)
+          .join("");
+      } catch (e) {
+        $("stats").textContent = "Could not load stats.";
+      }
+    }
+
+    function setStatus(el, msg, ok) {
+      el.textContent = msg;
+      el.className = "status " + (ok ? "ok" : "err");
+    }
+
+    $("ingest-btn").addEventListener("click", async () => {
+      const path = $("ingest-path").value.trim();
+      if (!path) return;
+      const btn = $("ingest-btn");
+      btn.disabled = true;
+      setStatus($("ingest-status"), "Indexing…", false);
+      try {
+        const r = await api("/api/ingest", { path });
+        setStatus($("ingest-status"), `Indexed ${r.chunks} chunks from ${r.documents} document(s).`, true);
+        refreshStats();
+      } catch (e) {
+        setStatus($("ingest-status"), "Error: " + e.message, false);
+      } finally {
+        btn.disabled = false;
+      }
+    });
+
+    $("ask-btn").addEventListener("click", ask);
+    $("question").addEventListener("keydown", (e) => { if (e.key === "Enter") ask(); });
+
+    async function ask() {
+      const question = $("question").value.trim();
+      if (!question) return;
+      const btn = $("ask-btn");
+      btn.disabled = true;
+      $("spinner").style.display = "block";
+      setStatus($("ask-status"), "", false);
+      try {
+        const r = await api("/api/ask", { question });
+        $("answer-text").textContent = r.answer;
+        $("sources").innerHTML = (r.sources || []).map((s, i) => `
+          <li>
+            <div class="meta">[${i + 1}] <span class="score">${s.score.toFixed(3)}</span> — ${s.source}</div>
+            <div class="text">${s.text.slice(0, 300)}</div>
+          </li>`).join("");
+        $("answer-area").style.display = "block";
+        setStatus($("ask-status"), "", true);
+      } catch (e) {
+        setStatus($("ask-status"), "Error: " + e.message, false);
+      } finally {
+        btn.disabled = false;
+        $("spinner").style.display = "none";
+      }
+    }
+
+    refreshStats();
+  </script>
+</body>
+</html>

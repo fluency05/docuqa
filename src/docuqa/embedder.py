@@ -34,12 +34,38 @@ class OpenAIEmbedder:
         return self.embed([text])[0]
 
 
+class LocalEmbedder:
+    """Embed text with a local, self-hosted model via fastembed.
+
+    See https://github.com/qdrant/fastembed. Runs entirely on your machine
+    (ONNX Runtime, no PyTorch) and downloads the model on first use. Install
+    the extra with ``pip install -e ".[local]"``.
+    """
+
+    def __init__(self, model_name: str = "BAAI/bge-small-en-v1.5") -> None:
+        try:
+            from fastembed import TextEmbedding
+        except ImportError as exc:
+            raise ImportError(
+                "Local embeddings require the 'fastembed' package. "
+                'Install it with: pip install -e ".[local]"'
+            ) from exc
+        self.model_name = model_name
+        self._model = TextEmbedding(model_name=model_name)
+
+    def embed(self, texts: list[str]) -> list[list[float]]:
+        return [list(vector) for vector in self._model.embed(texts)]
+
+    def embed_query(self, text: str) -> list[float]:
+        return self.embed([text])[0]
+
+
 class HashingEmbedder:
     """Deterministic, offline embedder for demos and tests.
 
     It maps tokens to a fixed-size vector via a stable hash. The resulting
     vectors are **not** semantically meaningful — they exist only so the full
-    pipeline can run without an API key. Use :class:`OpenAIEmbedder` for real use.
+    pipeline can run without any model at all.
     """
 
     def __init__(self, dim: int = 256) -> None:

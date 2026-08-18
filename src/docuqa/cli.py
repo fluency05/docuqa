@@ -26,14 +26,18 @@ _OFFLINE_HELP = "Run offline with a deterministic demo embedder and mock LLM (no
 
 def _build_pipeline(offline: bool) -> RAGPipeline:
     config = Config.from_env()
-    if not offline and not config.api_key:
+    if offline:
+        config.embedder = "hashing"
+        config.llm = "mock"
+    if (config.embedder == "openai" or config.llm == "openai") and not config.api_key:
         console.print(
             "[red]OPENAI_API_KEY is not set.[/red]\n"
-            "Set it via the OPENAI_API_KEY environment variable or a [bold].env[/bold] file, "
-            "or pass [bold]--offline[/bold] to try a quick offline demo."
+            "Set it via OPENAI_API_KEY / a [bold].env[/bold] file, pass [bold]--offline[/bold] "
+            "for a quick demo, or switch to a local backend "
+            "([bold]DOCUQA_EMBEDDER=local[/bold], [bold]DOCUQA_LLM=ollama[/bold])."
         )
         raise typer.Exit(code=1)
-    return RAGPipeline(config, offline=offline)
+    return RAGPipeline(config)
 
 
 def _print_sources(answer: Answer) -> None:
@@ -112,8 +116,32 @@ def chat(
 def stats() -> None:
     """Show information about the current index."""
     config = Config.from_env()
-    pipeline = RAGPipeline(config, offline=True)
+    config.embedder = "hashing"
+    config.llm = "mock"
+    pipeline = RAGPipeline(config)
     _print_stats(pipeline)
+
+
+@app.command()
+def web(
+    host: str = typer.Option("127.0.0.1", "--host", help="Host interface to bind."),
+    port: int = typer.Option(8000, "--port", help="Port to bind."),
+    offline: bool = typer.Option(False, "--offline", help=_OFFLINE_HELP),
+) -> None:
+    """Launch the browser-based web UI."""
+    try:
+        import uvicorn  # noqa: F401
+        from .web import create_app
+    except ImportError:
+        console.print(
+            "[red]The web UI requires fastapi and uvicorn.[/red] "
+            'Install them with: pip install -e ".[web]"'
+        )
+        raise typer.Exit(code=1)
+    pipeline = _build_pipeline(offline)
+    app = create_app(pipeline)
+    console.print(f"[green]Serving docuqa at[/green] http://{host}:{port}")
+    uvicorn.run(app, host=host, port=port)
 
 
 if __name__ == "__main__":
