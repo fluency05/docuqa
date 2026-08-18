@@ -1,0 +1,13 @@
+# Normalize line endings so the repository stays consistent across Windows, macOS, and Linux.
+* text=auto
+
+# Keep LF (not CRLF) for source, config, docs, and CI files.
+*.py text eol=lf
+*.toml text eol=lf
+*.md text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.json text eol=lf
+LICENSE text eol=lf
+.gitignore text eol=lf
+.env.example text eol=lf

@@ -1,0 +1,34 @@
+# Byte-compiled / optimized files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Environment secrets
+.env
+
+# Test / coverage / linter caches
+.pytest_cache/
+.pytest_tmp/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# IDE / editor
+.idea/
+.vscode/
+*.swp
+
+# Project runtime data (the search index)
+.docuqa/

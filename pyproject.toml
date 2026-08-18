@@ -1,0 +1,59 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "docuqa"
+version = "0.1.0"
+description = "A lightweight Retrieval-Augmented Generation (RAG) document Q&A assistant in Python."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+authors = [{ name = "fluency05", email = "fluency05@users.noreply.github.com" }]
+keywords = ["rag", "llm", "openai", "question-answering", "vector-search", "ai", "nlp"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+  "Typing :: Typed",
+]
+dependencies = [
+  "numpy>=1.26",
+  "openai>=1.30",
+  "pypdf>=4.0",
+  "python-dotenv>=1.0",
+  "rich>=13.0",
+  "typer>=0.12",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0",
+  "ruff>=0.4",
+]
+
+[project.scripts]
+docuqa = "docuqa.cli:app"
+
+[project.urls]
+Homepage = "https://github.com/fluency05/docuqa"
+Issues = "https://github.com/fluency05/docuqa/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/docuqa"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
