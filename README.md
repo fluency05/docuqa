@@ -7,6 +7,8 @@ Point it at a folder of documents, ask questions in plain language, and get
 answers **grounded in your files** — with citations back to the source. Run it
 fully on your machine (private), or plug in OpenAI. CLI, web UI, and Python API.
 
+> 🌐 [中文文档](README.zh-CN.md)
+
 [![CI](https://github.com/fluency05/docuqa/actions/workflows/ci.yml/badge.svg)](https://github.com/fluency05/docuqa/actions/workflows/ci.yml)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue.svg)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
