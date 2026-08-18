@@ -31,7 +31,9 @@ class InMemoryVectorStore:
     ``vectors.npy`` file plus a ``chunks.json`` metadata sidecar.
     """
 
-    def __init__(self, chunks: list[Chunk] | None = None, vectors: np.ndarray | None = None) -> None:
+    def __init__(
+        self, chunks: list[Chunk] | None = None, vectors: np.ndarray | None = None
+    ) -> None:
         self._chunks: list[Chunk] = chunks or []
         self._vectors: np.ndarray | None = vectors  # shape (n, d), rows normalized
 
@@ -42,7 +44,10 @@ class InMemoryVectorStore:
         norms = np.linalg.norm(matrix, axis=1, keepdims=True)
         norms[norms == 0] = 1.0
         normalized = matrix / norms
-        self._vectors = normalized if self._vectors is None else np.vstack([self._vectors, normalized])
+        if self._vectors is None:
+            self._vectors = normalized
+        else:
+            self._vectors = np.vstack([self._vectors, normalized])
         self._chunks.extend(chunks)
 
     def search(self, query: list[float], top_k: int) -> list[tuple[Chunk, float]]:

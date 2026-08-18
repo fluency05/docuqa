@@ -18,7 +18,10 @@ SYSTEM_PROMPT = (
 
 def build_prompt(question: str, results: list[SearchResult]) -> str:
     """Assemble the retrieval context and question into a single prompt."""
-    blocks = [f"[{i}] Source: {result.chunk.source}\n{result.chunk.text}" for i, result in enumerate(results, 1)]
+    blocks = [
+        f"[{i}] Source: {result.chunk.source}\n{result.chunk.text}"
+        for i, result in enumerate(results, 1)
+    ]
     context = "\n\n".join(blocks)
     return f"Context:\n{context}\n\nQuestion: {question}\n\nAnswer (with citations):"
 

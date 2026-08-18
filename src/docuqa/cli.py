@@ -90,7 +90,9 @@ def chat(
     """Start an interactive Q&A session (type 'exit' to quit)."""
     pipeline = _build_pipeline(offline)
     console.print("[bold]docuqa chat[/bold] — ask questions about your indexed documents.")
-    console.print("Type [bold]exit[/bold] or [bold]quit[/bold] to leave, [bold]stats[/bold] for index info.")
+    console.print(
+        "Type [bold]exit[/bold] or [bold]quit[/bold] to leave, [bold]stats[/bold] for index info."
+    )
     while True:
         question = Prompt.ask("[green]You[/green]").strip()
         if not question:
