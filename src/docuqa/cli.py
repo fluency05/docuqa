@@ -166,10 +166,8 @@ def web(
         import uvicorn  # noqa: F401
         from .web import create_app
     except ImportError:
-        console.print(
-            "[red]The web UI requires fastapi and uvicorn.[/red] "
-            'Install them with: pip install -e ".[web]"'
-        )
+        console.print("[red]The web UI requires fastapi and uvicorn.[/red]")
+        console.print('Install them with: pip install -e ".[web]"', markup=False)
         raise typer.Exit(code=1)
     pipeline = _build_pipeline(offline)
     app = create_app(pipeline)
