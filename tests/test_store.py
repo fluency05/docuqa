@@ -61,3 +61,22 @@ def test_remove_missing_source_is_noop():
     store.add([Chunk(id="a", text="a", source="a.md", index=0)], [[1.0, 0.0]])
     assert store.remove_source("nope.md") == 0
     assert len(store) == 1
+
+
+def test_add_different_dimension_resets_store():
+    store = InMemoryVectorStore()
+    store.add([Chunk(id="a", text="a", source="a.md", index=0)], [[1.0, 0.0, 0.0]])
+    assert store.dimension == 3
+    # Adding vectors of a different width (a new embedder) resets the store.
+    store.add([Chunk(id="b", text="b", source="b.md", index=0)], [[1.0, 0.0]])
+    assert store.dimension == 2
+    assert len(store) == 1
+    assert store.sources() == {"b.md"}
+
+
+def test_remove_all_sources_resets_dimension():
+    store = InMemoryVectorStore()
+    store.add([Chunk(id="a", text="a", source="a.md", index=0)], [[1.0, 0.0]])
+    assert store.remove_source("a.md") == 1
+    assert store.dimension is None
+    assert len(store) == 0

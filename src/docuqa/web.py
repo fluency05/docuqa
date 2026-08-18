@@ -57,6 +57,7 @@ def create_app(pipeline: RAGPipeline) -> FastAPI:
             "documents": report.documents,
             "chunks": report.chunks,
             "replaced": report.replaced,
+            "rebuilt": report.dimension_changed,
         }
 
     return app

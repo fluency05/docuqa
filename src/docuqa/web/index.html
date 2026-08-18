@@ -214,7 +214,8 @@
         statsLoading: "加载中…",
         indexed: (p) => {
           const replaced = p.replaced ? `，${p.replaced} 个已更新` : "";
-          return `已索引 ${p.chunks} 个分块，来自 ${p.documents} 个文档${replaced}`;
+          const rebuilt = p.rebuilt ? "（嵌入模型已变更，索引已重建）" : "";
+          return `已索引 ${p.chunks} 个分块，来自 ${p.documents} 个文档${replaced}${rebuilt}`;
         },
         ingestError: "索引失败：",
         askError: "提问失败：",
@@ -250,7 +251,8 @@
         statsLoading: "Loading…",
         indexed: (p) => {
           const replaced = p.replaced ? `, ${p.replaced} replaced` : "";
-          return `Indexed ${p.chunks} chunks from ${p.documents} document(s)${replaced}`;
+          const rebuilt = p.rebuilt ? " (embedding model changed; index rebuilt)" : "";
+          return `Indexed ${p.chunks} chunks from ${p.documents} document(s)${replaced}${rebuilt}`;
         },
         ingestError: "Index failed: ",
         askError: "Ask failed: ",

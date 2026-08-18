@@ -22,6 +22,7 @@ class IngestReport:
     documents: int
     chunks: int
     replaced: int = 0
+    dimension_changed: bool = False
 
 
 class RAGPipeline:
@@ -72,12 +73,20 @@ class RAGPipeline:
         sources = {document.source for document in documents}
         existing = self.store.sources()
         replaced = len(sources & existing)
+        old_dimension = self.store.dimension
         for source in sources:
             self.store.remove_source(source)
 
         chunks = self.retriever.index(documents)
+        dimension_changed = old_dimension is not None and self.store.dimension != old_dimension
+
         self.store.save(self.config.index_dir)
-        return IngestReport(documents=len(documents), chunks=chunks, replaced=replaced)
+        return IngestReport(
+            documents=len(documents),
+            chunks=chunks,
+            replaced=replaced,
+            dimension_changed=dimension_changed,
+        )
 
     def ask(self, question: str, top_k: int | None = None) -> Answer:
         """Answer a single question using the current index."""

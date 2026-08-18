@@ -44,6 +44,10 @@ class InMemoryVectorStore:
         norms = np.linalg.norm(matrix, axis=1, keepdims=True)
         norms[norms == 0] = 1.0
         normalized = matrix / norms
+        if self.dimension is not None and self.dimension != normalized.shape[1]:
+            # The existing index was built with a different embedder, so its
+            # vectors are incompatible. Start fresh rather than crash.
+            self.clear()
         if self._vectors is None:
             self._vectors = normalized
         else:
@@ -91,8 +95,20 @@ class InMemoryVectorStore:
         if removed:
             keep_mask = np.asarray(keep, dtype=bool)
             self._chunks = [chunk for chunk, keep_it in zip(self._chunks, keep) if keep_it]
-            self._vectors = self._vectors[keep_mask]
+            self._vectors = self._vectors[keep_mask] if self._chunks else None
         return removed
+
+    @property
+    def dimension(self) -> int | None:
+        """Width of the stored vectors, or ``None`` when the store is empty."""
+        if self._vectors is None or self._vectors.shape[0] == 0:
+            return None
+        return int(self._vectors.shape[1])
+
+    def clear(self) -> None:
+        """Drop every chunk and vector."""
+        self._chunks = []
+        self._vectors = None
 
     def sources(self) -> set[str]:
         """Return the set of source paths currently indexed."""

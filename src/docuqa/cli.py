@@ -74,6 +74,11 @@ def ingest(
         f"[green]Indexed[/green] {report.chunks} chunks from {report.documents} "
         f"document(s){replaced} into {pipeline.config.index_dir}"
     )
+    if report.dimension_changed:
+        console.print(
+            "[yellow]Note:[/yellow] the embedding model changed, "
+            "so the index was rebuilt from scratch."
+        )
 
 
 @app.command()
