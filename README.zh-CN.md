@@ -30,14 +30,14 @@
 
 ```mermaid
 flowchart LR
-    A[文档<br/>md / txt / pdf] --> B[切分 Chunker]
-    B --> C[嵌入 Embedder<br/>openai | local]
-    C --> D[(向量库)]
-    Q[问题] --> C
-    D --> E[检索 Retriever]
+    A["文档<br/>md / txt / pdf"] --> B["切分 Chunker"]
+    B --> C["嵌入 Embedder<br/>openai | local"]
+    C --> D[("向量库")]
+    Q["问题"] --> C
+    D --> E["检索 Retriever"]
     Q --> E
-    E --> F[大模型 LLM<br/>openai | ollama]
-    F --> G[带引用答案]
+    E --> F["大模型 LLM<br/>openai | ollama"]
+    F --> G["带引用答案"]
 ```
 
 1. **索引（Ingest）** — 加载文档，切分成带重叠的分块，向量化后存入本地向量索引。

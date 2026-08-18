@@ -37,14 +37,14 @@ fully on your machine (private), or plug in OpenAI. CLI, web UI, and Python API.
 
 ```mermaid
 flowchart LR
-    A[Documents<br/>md / txt / pdf] --> B[Chunker]
-    B --> C[Embedder<br/>openai | local]
-    C --> D[(Vector store)]
-    Q[Question] --> C
-    D --> E[Retriever]
+    A["Documents<br/>md / txt / pdf"] --> B["Chunker"]
+    B --> C["Embedder<br/>openai | local"]
+    C --> D[("Vector store")]
+    Q["Question"] --> C
+    D --> E["Retriever"]
     Q --> E
-    E --> F[LLM<br/>openai | ollama]
-    F --> G[Cited answer]
+    E --> F["LLM<br/>openai | ollama"]
+    F --> G["Cited answer"]
 ```
 
 1. **Ingest** — documents are loaded, split into overlapping chunks, embedded,
