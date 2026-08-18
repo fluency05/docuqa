@@ -20,6 +20,8 @@ class DocumentLoader:
     def load_path(self, path: str | Path) -> list[Document]:
         """Load one file, or every supported file under a directory (recursively)."""
         target = Path(path)
+        if not target.exists():
+            raise FileNotFoundError(f"Path does not exist: {path}")
         if target.is_dir():
             documents: list[Document] = []
             for extension in sorted(SUPPORTED_EXTENSIONS):

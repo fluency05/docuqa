@@ -4,9 +4,13 @@ from __future__ import annotations
 
 import hashlib
 import math
+import re
 from typing import Protocol
 
 from openai import OpenAI
+
+# Latin word tokens (letters, digits, underscore).
+_WORD_RANGE = re.compile(r"[a-zA-Z0-9_]+")
 
 
 class Embedder(Protocol):
@@ -79,7 +83,7 @@ class HashingEmbedder:
 
     def _embed_one(self, text: str) -> list[float]:
         vector = [0.0] * self.dim
-        for token in text.lower().split():
+        for token in self._tokens(text):
             digest = hashlib.md5(token.encode("utf-8")).hexdigest()
             value = int(digest, 16)
             index = value % self.dim
@@ -87,3 +91,14 @@ class HashingEmbedder:
             vector[index] += sign
         norm = math.sqrt(sum(v * v for v in vector)) or 1.0
         return [v / norm for v in vector]
+
+    def _tokens(self, text: str) -> list[str]:
+        """Split text into tokens: Latin words plus CJK character bigrams.
+
+        CJK text has no spaces, so whole-sentence hashing would be useless;
+        bigrams give the offline demo usable keyword-level overlap for Chinese.
+        """
+        tokens = _WORD_RANGE.findall(text.lower())
+        cjk = [char for char in text if "\u4e00" <= char <= "\u9fff"]
+        tokens.extend(cjk[i] + cjk[i + 1] for i in range(len(cjk) - 1))
+        return tokens

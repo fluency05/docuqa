@@ -29,7 +29,7 @@ class RAGPipeline:
     """End-to-end RAG pipeline: ingest documents once, then answer questions.
 
     The embedder and LLM backends are chosen from :class:`Config`:
-    ``openai``/``local``/``hashing`` and ``openai``/``ollama``/``mock``.
+    ``openai``/``local``/``hashing`` and ``openai``/``deepseek``/``ollama``/``mock``.
     """
 
     def __init__(self, config: Config) -> None:

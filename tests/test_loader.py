@@ -48,3 +48,8 @@ def test_load_bytes_decodes_gbk():
 def test_load_bytes_rejects_unsupported():
     with pytest.raises(UnsupportedFileTypeError):
         DocumentLoader().load_bytes(b"x", "c.bin")
+
+
+def test_load_missing_path_raises():
+    with pytest.raises(FileNotFoundError):
+        DocumentLoader().load_path("definitely-does-not-exist")
