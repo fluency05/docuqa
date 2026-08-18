@@ -54,6 +54,9 @@ class RAGPipeline:
             return MockLLM()
         if config.llm == "ollama":
             return OllamaLLM(config.ollama_model, config.ollama_base_url)
+        if config.llm == "deepseek":
+            # DeepSeek is OpenAI-compatible but has no embeddings endpoint.
+            return OpenAILLM(config.deepseek_model, config.api_key, config.deepseek_base_url)
         return OpenAILLM(config.llm_model, config.api_key, config.base_url)
 
     def ingest(self, paths: list[str | Path]) -> IngestReport:

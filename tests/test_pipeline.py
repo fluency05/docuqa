@@ -1,4 +1,5 @@
 from docuqa.config import Config
+from docuqa.llm import OpenAILLM
 from docuqa.pipeline import RAGPipeline
 
 
@@ -58,3 +59,10 @@ def test_reingest_replaces_instead_of_duplicating(tmp_path):
     report = pipeline.ingest([doc])
     assert report.replaced == 1
     assert pipeline.stats()["chunks"] == first
+
+
+def test_deepseek_builds_openai_compatible_llm():
+    config = Config(llm="deepseek", api_key="sk-test")
+    llm = RAGPipeline._build_llm(config)
+    assert isinstance(llm, OpenAILLM)
+    assert llm.model == "deepseek-chat"

@@ -31,7 +31,7 @@ def _build_pipeline(offline: bool) -> RAGPipeline:
     if offline:
         config.embedder = "hashing"
         config.llm = "mock"
-    if (config.embedder == "openai" or config.llm == "openai") and not config.api_key:
+    if (config.embedder == "openai" or config.llm in {"openai", "deepseek"}) and not config.api_key:
         console.print(
             "[red]OPENAI_API_KEY is not set.[/red]\n"
             "Set it via OPENAI_API_KEY / a [bold].env[/bold] file, pass [bold]--offline[/bold] "

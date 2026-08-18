@@ -97,6 +97,24 @@ OPENAI_API_KEY=sk-...
 
 Works with any OpenAI-compatible endpoint (set `OPENAI_BASE_URL`).
 
+### DeepSeek (chat only)
+
+[DeepSeek](https://api-docs.deepseek.com/) is OpenAI-compatible, so it works as
+the LLM out of the box. It has **no embeddings endpoint**, so pair it with a
+local embedder:
+
+```bash
+pip install -e ".[local]"
+```
+
+```bash
+# .env
+DOCUQA_LLM=deepseek
+OPENAI_API_KEY=sk-your-deepseek-key
+DOCUQA_EMBEDDER=local          # DeepSeek can't do embeddings; use local (or OpenAI)
+DOCUQA_DEEPSEEK_MODEL=deepseek-chat   # or deepseek-reasoner
+```
+
 ### Fully local (privacy-preserving)
 
 ```bash
@@ -202,11 +220,13 @@ All settings are read from environment variables or a `.env` file:
 | Variable                      | Default                  | Description                          |
 | ----------------------------- | ------------------------ | ------------------------------------ |
 | `DOCUQA_EMBEDDER`             | `openai`                 | `openai` / `local` / `hashing`       |
-| `DOCUQA_LLM`                  | `openai`                 | `openai` / `ollama` / `mock`         |
-| `OPENAI_API_KEY`              | —                        | API key for the OpenAI backend       |
+| `DOCUQA_LLM`                  | `openai`                 | `openai` / `deepseek` / `ollama` / `mock` |
+| `OPENAI_API_KEY`              | —                        | API key for the OpenAI/DeepSeek backend |
 | `OPENAI_BASE_URL`             | OpenAI default           | Any OpenAI-compatible endpoint       |
 | `DOCUQA_MODEL`                | `gpt-4o-mini`            | OpenAI chat model                    |
 | `DOCUQA_EMBEDDING_MODEL`      | `text-embedding-3-small` | OpenAI embeddings model              |
+| `DOCUQA_DEEPSEEK_MODEL`       | `deepseek-chat`          | DeepSeek chat model (`deepseek-reasoner` for R1) |
+| `DOCUQA_DEEPSEEK_BASE_URL`    | `https://api.deepseek.com` | DeepSeek API endpoint              |
 | `DOCUQA_LOCAL_EMBEDDING_MODEL`| `BAAI/bge-small-en-v1.5` | Local fastembed model                |
 | `DOCUQA_OLLAMA_MODEL`         | `llama3.2`               | Local Ollama model                   |
 | `DOCUQA_OLLAMA_BASE_URL`      | `http://localhost:11434` | Ollama server address                |

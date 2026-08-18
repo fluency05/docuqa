@@ -22,14 +22,18 @@ class Config:
     chunk_size: int = 500
     chunk_overlap: int = 50
     top_k: int = 4
-    # Backend selection: embedder in {openai, local, hashing}; llm in {openai, ollama, mock}.
+    # Backend selection: embedder in {openai, local, hashing};
+    # llm in {openai, deepseek, ollama, mock}.
     embedder: str = "openai"
     llm: str = "openai"
-    # OpenAI backend.
+    # OpenAI-compatible backend.
     llm_model: str = "gpt-4o-mini"
     embedding_model: str = "text-embedding-3-small"
     api_key: str | None = None
     base_url: str | None = None
+    # DeepSeek backend (chat only — no embeddings endpoint).
+    deepseek_model: str = "deepseek-chat"
+    deepseek_base_url: str = "https://api.deepseek.com"
     # Local backend.
     local_embedding_model: str = "BAAI/bge-small-en-v1.5"
     ollama_model: str = "llama3.2"
@@ -48,6 +52,8 @@ class Config:
             llm=os.getenv("DOCUQA_LLM", "openai"),
             llm_model=os.getenv("DOCUQA_MODEL", "gpt-4o-mini"),
             embedding_model=os.getenv("DOCUQA_EMBEDDING_MODEL", "text-embedding-3-small"),
+            deepseek_model=os.getenv("DOCUQA_DEEPSEEK_MODEL", "deepseek-chat"),
+            deepseek_base_url=os.getenv("DOCUQA_DEEPSEEK_BASE_URL", "https://api.deepseek.com"),
             local_embedding_model=os.getenv(
                 "DOCUQA_LOCAL_EMBEDDING_MODEL", "BAAI/bge-small-en-v1.5"
             ),
