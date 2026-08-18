@@ -53,6 +53,10 @@ def create_app(pipeline: RAGPipeline) -> FastAPI:
     @app.post("/api/ingest")
     def ingest(request: _IngestRequest) -> dict:
         report = pipeline.ingest([request.path])
-        return {"documents": report.documents, "chunks": report.chunks}
+        return {
+            "documents": report.documents,
+            "chunks": report.chunks,
+            "replaced": report.replaced,
+        }
 
     return app

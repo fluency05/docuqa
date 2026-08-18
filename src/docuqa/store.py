@@ -82,6 +82,22 @@ class InMemoryVectorStore:
             chunks = [cls._chunk_from_dict(item) for item in raw]
         return cls(chunks=chunks, vectors=vectors)
 
+    def remove_source(self, source: str) -> int:
+        """Remove every chunk whose source equals ``source``. Returns count removed."""
+        if self._vectors is None or not self._chunks:
+            return 0
+        keep = [chunk.source != source for chunk in self._chunks]
+        removed = len(self._chunks) - sum(keep)
+        if removed:
+            keep_mask = np.asarray(keep, dtype=bool)
+            self._chunks = [chunk for chunk, keep_it in zip(self._chunks, keep) if keep_it]
+            self._vectors = self._vectors[keep_mask]
+        return removed
+
+    def sources(self) -> set[str]:
+        """Return the set of source paths currently indexed."""
+        return {chunk.source for chunk in self._chunks}
+
     def __len__(self) -> int:
         return len(self._chunks)
 

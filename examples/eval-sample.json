@@ -1,0 +1,22 @@
+[
+  {
+    "query": "What is Retrieval-Augmented Generation?",
+    "relevant": ["rag-guide.md"]
+  },
+  {
+    "query": "How much does AcmeCloud cost?",
+    "relevant": ["acmecloud-faq.md"]
+  },
+  {
+    "query": "Which regions does AcmeCloud support?",
+    "relevant": ["acmecloud-faq.md"]
+  },
+  {
+    "query": "What is the capital of Japan?",
+    "relevant": ["rag-guide.md"]
+  },
+  {
+    "query": "What is the refund policy?",
+    "relevant": ["acmecloud-faq.md"]
+  }
+]

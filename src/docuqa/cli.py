@@ -11,6 +11,8 @@ from rich.prompt import Prompt
 from rich.table import Table
 
 from .config import Config
+from .evaluation import evaluate as run_evaluation
+from .evaluation import load_cases
 from .pipeline import RAGPipeline
 from .types import Answer
 
@@ -67,9 +69,10 @@ def ingest(
     """Load documents, chunk them, embed them, and save the search index."""
     pipeline = _build_pipeline(offline)
     report = pipeline.ingest(paths)
+    replaced = f", {report.replaced} replaced" if report.replaced else ""
     console.print(
         f"[green]Indexed[/green] {report.chunks} chunks from {report.documents} "
-        f"document(s) into {pipeline.config.index_dir}"
+        f"document(s){replaced} into {pipeline.config.index_dir}"
     )
 
 
@@ -110,6 +113,36 @@ def chat(
         console.print(Panel(answer.answer, title="Assistant", border_style="cyan"))
         if answer.sources:
             _print_sources(answer)
+
+
+@app.command("eval")
+def eval_cmd(
+    dataset: str = typer.Argument(..., help="Path to a JSON evaluation dataset."),
+    top_k: Optional[int] = typer.Option(None, "--top-k", help="Chunks to retrieve per query."),
+    offline: bool = typer.Option(False, "--offline", help=_OFFLINE_HELP),
+) -> None:
+    """Evaluate retrieval quality (Recall@k and MRR) against a dataset."""
+    pipeline = _build_pipeline(offline)
+    cases = load_cases(dataset)
+    report = run_evaluation(pipeline.retriever, cases, top_k or pipeline.config.top_k)
+
+    table = Table(
+        title=f"Retrieval evaluation (k={report.k})", show_header=True, header_style="bold"
+    )
+    table.add_column("Query")
+    table.add_column("Hit", justify="center")
+    table.add_column("Rank", justify="right")
+    table.add_column("Top source")
+    for result in report.results:
+        top_source = result.retrieved[0] if result.retrieved else "-"
+        table.add_row(
+            result.query, "yes" if result.hit else "no", str(result.rank or "-"), top_source
+        )
+    console.print(table)
+    console.print(
+        f"[bold]Recall@{report.k}[/bold]: {report.recall_at_k:.3f}   "
+        f"[bold]MRR[/bold]: {report.mrr:.3f}"
+    )
 
 
 @app.command()

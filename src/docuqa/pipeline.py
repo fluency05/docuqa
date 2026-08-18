@@ -21,6 +21,7 @@ class IngestReport:
 
     documents: int
     chunks: int
+    replaced: int = 0
 
 
 class RAGPipeline:
@@ -56,13 +57,24 @@ class RAGPipeline:
         return OpenAILLM(config.llm_model, config.api_key, config.base_url)
 
     def ingest(self, paths: list[str | Path]) -> IngestReport:
-        """Load, chunk, embed, and persist documents found at ``paths``."""
+        """Load, chunk, embed, and persist documents found at ``paths``.
+
+        Re-indexing a source replaces its existing chunks (incremental update)
+        instead of duplicating them.
+        """
         documents: list = []
         for path in paths:
             documents.extend(self.loader.load_path(path))
+
+        sources = {document.source for document in documents}
+        existing = self.store.sources()
+        replaced = len(sources & existing)
+        for source in sources:
+            self.store.remove_source(source)
+
         chunks = self.retriever.index(documents)
         self.store.save(self.config.index_dir)
-        return IngestReport(documents=len(documents), chunks=chunks)
+        return IngestReport(documents=len(documents), chunks=chunks, replaced=replaced)
 
     def ask(self, question: str, top_k: int | None = None) -> Answer:
         """Answer a single question using the current index."""

@@ -45,3 +45,19 @@ def test_load_missing_index_is_empty(tmp_path):
     store = InMemoryVectorStore.load(tmp_path)
     assert len(store) == 0
     assert store.search([1.0, 0.0], top_k=3) == []
+
+
+def test_remove_source_drops_only_that_source():
+    store = InMemoryVectorStore()
+    store.add([Chunk(id="a", text="a", source="a.md", index=0)], [[1.0, 0.0]])
+    store.add([Chunk(id="b", text="b", source="b.md", index=0)], [[0.0, 1.0]])
+    assert store.remove_source("a.md") == 1
+    assert len(store) == 1
+    assert store.sources() == {"b.md"}
+
+
+def test_remove_missing_source_is_noop():
+    store = InMemoryVectorStore()
+    store.add([Chunk(id="a", text="a", source="a.md", index=0)], [[1.0, 0.0]])
+    assert store.remove_source("nope.md") == 0
+    assert len(store) == 1

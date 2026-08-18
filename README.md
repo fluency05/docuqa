@@ -22,6 +22,11 @@ fully on your machine (private), or plug in OpenAI. CLI, web UI, and Python API.
 - 🔌 **Swappable backends** — OpenAI, fully-local (`fastembed` + `Ollama`), or
   an offline demo backend.
 - 🤖 **Cited answers** — every answer lists the source chunks it used.
+- 🔁 **Incremental indexing** — re-ingesting a source replaces its chunks instead
+  of duplicating them.
+- 🌐 **Chinese & English** — sentence-boundary chunking for both languages, plus a
+  Chinese local embedding model option.
+- 📊 **Retrieval evaluation** — `docuqa eval` reports Recall@k and MRR.
 - 🖥️ **Web UI** — a browser interface built on FastAPI (no frontend build step).
 - 💬 **CLI + Python API** — one-shot `ask`, interactive `chat`, and a clean API.
 - 🧪 **Tested** — unit tests plus a GitHub Actions CI pipeline.
@@ -113,6 +118,19 @@ DOCUQA_LLM=ollama              # a local LLM served by Ollama
 With both set to local backends, **no document or query text ever leaves your
 machine** — ideal for private/confidential knowledge bases.
 
+### 🌐 Chinese documents
+
+Chunking is sentence-boundary-aware for both English and Chinese (splits at
+`。！？;` and `.?!;`). For Chinese documents, pick a Chinese embedding model:
+
+```bash
+# .env
+DOCUQA_EMBEDDER=local
+DOCUQA_LOCAL_EMBEDDING_MODEL=BAAI/bge-small-zh-v1.5
+```
+
+See `examples/星辰笔记-产品说明.md` for a Chinese sample document.
+
 ## 🖥️ Web UI
 
 ```bash
@@ -131,11 +149,36 @@ docuqa ingest PATH... [--offline]   Load and index files or directories
 docuqa ask QUESTION [--top-k N] [--offline]
                                     Answer a single question
 docuqa chat [--offline]             Interactive Q&A session
+docuqa eval DATASET [--top-k N] [--offline]
+                                    Evaluate Recall@k and MRR
 docuqa web [--host H] [--port P]    Launch the web UI
 docuqa stats                        Show current index info
 ```
 
 Run `docuqa --help` for full details.
+
+## 📊 Evaluation
+
+Measure retrieval quality with Recall@k and Mean Reciprocal Rank (MRR) against a
+small JSON dataset:
+
+```json
+[
+  { "query": "What is RAG?", "relevant": ["rag-guide.md"] },
+  { "query": "How much does AcmeCloud cost?", "relevant": ["acmecloud-faq.md"] }
+]
+```
+
+```bash
+docuqa ingest examples
+docuqa eval examples/eval-sample.json --top-k 4
+```
+
+`relevant` entries match source files by full path or basename. The command prints
+a per-query table and aggregate metrics.
+
+> Tip: run evaluation with a real embedder (`openai` or `local`) — the offline
+> hashing embedder is only illustrative, so its scores will look low.
 
 ## 🐍 Python API
 
@@ -210,9 +253,10 @@ ruff check .
 
 - [x] Local embedding models (`fastembed`) and local LLM (`Ollama`)
 - [x] A browser-based web UI
+- [x] Retrieval evaluation metrics (Recall@k, MRR)
+- [x] Incremental indexing (re-ingest replaces, no duplicates)
 - [ ] Persistent/scalable storage backends (Chroma, FAISS, Qdrant)
 - [ ] Streaming answers and chat history
-- [ ] Retrieval evaluation metrics (recall, MRR)
 
 ## 📄 License
 

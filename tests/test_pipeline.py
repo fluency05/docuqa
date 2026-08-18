@@ -44,3 +44,17 @@ def test_stats_reports_backends(tmp_path):
     stats = RAGPipeline(config).stats()
     assert stats["embedder"] == "hashing"
     assert stats["llm"] == "mock"
+
+
+def test_reingest_replaces_instead_of_duplicating(tmp_path):
+    config = _offline_config(tmp_path)
+    doc = tmp_path / "notes.md"
+    doc.write_text("The sky is blue.", encoding="utf-8")
+
+    pipeline = RAGPipeline(config)
+    pipeline.ingest([doc])
+    first = pipeline.stats()["chunks"]
+
+    report = pipeline.ingest([doc])
+    assert report.replaced == 1
+    assert pipeline.stats()["chunks"] == first

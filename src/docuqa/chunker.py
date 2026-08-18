@@ -9,6 +9,12 @@ from .types import Chunk, Document
 # A paragraph boundary: one or more blank lines.
 _PARAGRAPH_SPLIT = re.compile(r"\n\s*\n")
 
+# Characters that end a sentence in English and Chinese.
+_SENTENCE_TERMINATORS = ".!?。！？;；"
+
+# How far back from the hard cut to look for a sentence boundary.
+_SENTENCE_LOOKBACK = 100
+
 
 class TextChunker:
     """Split text into chunks of at most ``chunk_size`` characters.
@@ -67,7 +73,29 @@ class TextChunker:
         return chunks
 
     def _split_long(self, text: str) -> list[str]:
-        return [text[i : i + self.chunk_size] for i in range(0, len(text), self.chunk_size)]
+        chunks: list[str] = []
+        start = 0
+        length = len(text)
+        while start < length:
+            end = min(start + self.chunk_size, length)
+            if end < length:
+                end = self._sentence_boundary(text, start, end)
+            chunks.append(text[start:end])
+            start = end
+        return chunks
+
+    @staticmethod
+    def _sentence_boundary(text: str, start: int, end: int) -> int:
+        """Return a cut position at (or just after) a sentence terminator.
+
+        Prefer breaking on a sentence boundary near ``end`` so chunks do not cut
+        mid-sentence; fall back to ``end`` when none exists in the window.
+        """
+        window_start = max(start, end - _SENTENCE_LOOKBACK)
+        for index in range(end - 1, window_start - 1, -1):
+            if text[index] in _SENTENCE_TERMINATORS:
+                return index + 1
+        return end
 
     def _apply_overlap(self, chunks: list[str]) -> list[str]:
         if self.overlap <= 0 or len(chunks) <= 1:

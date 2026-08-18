@@ -52,3 +52,15 @@ def test_invalid_parameters_raise():
         pass
     else:
         raise AssertionError("expected ValueError for overlap >= chunk_size")
+
+
+def test_chinese_long_text_splits_at_sentence_boundaries():
+    chunker = TextChunker(chunk_size=80, overlap=0)
+    sentence = "这是第一个句子。这是第二个句子！这是第三个句子？"
+    long_text = sentence * 10
+
+    chunks = chunker.chunk(Document(source="zh.txt", content=long_text))
+
+    assert len(chunks) > 1
+    for chunk in chunks[:-1]:
+        assert chunk.text[-1] in "。！？"
