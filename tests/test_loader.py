@@ -32,3 +32,19 @@ def test_unsupported_file_raises(tmp_path):
     path.write_bytes(b"\x00")
     with pytest.raises(UnsupportedFileTypeError):
         DocumentLoader().load_path(path)
+
+
+def test_load_bytes_decodes_utf8():
+    document = DocumentLoader().load_bytes("你好".encode("utf-8"), "a.md")
+    assert document.source == "a.md"
+    assert document.content == "你好"
+
+
+def test_load_bytes_decodes_gbk():
+    document = DocumentLoader().load_bytes("中文".encode("gbk"), "b.txt")
+    assert document.content == "中文"
+
+
+def test_load_bytes_rejects_unsupported():
+    with pytest.raises(UnsupportedFileTypeError):
+        DocumentLoader().load_bytes(b"x", "c.bin")

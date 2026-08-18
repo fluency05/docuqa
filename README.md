@@ -156,9 +156,15 @@ pip install -e ".[web]"
 docuqa web --port 8000
 ```
 
-Open <http://127.0.0.1:8000>. The single-page UI lets you index a path, ask
-questions, and inspect the retrieved sources and index stats — backed by a small
-JSON API (`/api/ingest`, `/api/ask`, `/api/stats`).
+Open <http://127.0.0.1:8000>. The single-page UI (Chinese/English toggle included)
+lets you:
+
+- **Drag-and-drop or multi-select files** to upload and index them, or
+- **index a whole directory by server path**,
+- ask questions and inspect retrieved sources and index stats.
+
+It is backed by a small JSON API (`/api/upload`, `/api/ingest`, `/api/ask`,
+`/api/stats`).
 
 ## 🖥️ CLI reference
 

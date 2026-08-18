@@ -8,10 +8,11 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 
+from .loader import UnsupportedFileTypeError
 from .pipeline import RAGPipeline
 
 _INDEX_FILE = Path(__file__).with_name("web") / "index.html"
@@ -53,6 +54,25 @@ def create_app(pipeline: RAGPipeline) -> FastAPI:
     @app.post("/api/ingest")
     def ingest(request: _IngestRequest) -> dict:
         report = pipeline.ingest([request.path])
+        return {
+            "documents": report.documents,
+            "chunks": report.chunks,
+            "replaced": report.replaced,
+            "rebuilt": report.dimension_changed,
+        }
+
+    @app.post("/api/upload")
+    def upload(files: list[UploadFile] = File(...)) -> dict:
+        documents = []
+        for file in files:
+            content = file.file.read()
+            try:
+                documents.append(
+                    pipeline.loader.load_bytes(content, file.filename or "upload.txt")
+                )
+            except UnsupportedFileTypeError as exc:
+                raise HTTPException(status_code=400, detail=str(exc)) from exc
+        report = pipeline.ingest_documents(documents)
         return {
             "documents": report.documents,
             "chunks": report.chunks,

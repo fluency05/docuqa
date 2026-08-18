@@ -12,7 +12,7 @@ from .llm import LLM, MockLLM, OllamaLLM, OpenAILLM
 from .loader import DocumentLoader
 from .retriever import Retriever
 from .store import InMemoryVectorStore
-from .types import Answer
+from .types import Answer, Document
 
 
 @dataclass
@@ -61,15 +61,19 @@ class RAGPipeline:
         return OpenAILLM(config.llm_model, config.api_key, config.base_url)
 
     def ingest(self, paths: list[str | Path]) -> IngestReport:
-        """Load, chunk, embed, and persist documents found at ``paths``.
-
-        Re-indexing a source replaces its existing chunks (incremental update)
-        instead of duplicating them.
-        """
-        documents: list = []
+        """Load documents at ``paths``, then index them (see ``ingest_documents``)."""
+        documents: list[Document] = []
         for path in paths:
             documents.extend(self.loader.load_path(path))
+        return self.ingest_documents(documents)
 
+    def ingest_documents(self, documents: list[Document]) -> IngestReport:
+        """Chunk, embed, and persist ``documents``.
+
+        Re-indexing a source replaces its existing chunks (incremental update)
+        instead of duplicating them. If the embedding model changed, the old
+        index is rebuilt from scratch.
+        """
         sources = {document.source for document in documents}
         existing = self.store.sources()
         replaced = len(sources & existing)

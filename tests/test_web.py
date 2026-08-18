@@ -39,3 +39,17 @@ def test_web_end_to_end(tmp_path):
     response = client.get("/api/stats")
     assert response.status_code == 200
     assert response.json()["chunks"] >= 1
+
+
+def test_web_upload_and_ask(tmp_path):
+    client = TestClient(_app(tmp_path))
+    response = client.post(
+        "/api/upload",
+        files=[("files", ("notes.md", "The sky is blue.", "text/markdown"))],
+    )
+    assert response.status_code == 200
+    assert response.json()["documents"] == 1
+
+    response = client.post("/api/ask", json={"question": "What color is the sky?"})
+    assert response.status_code == 200
+    assert any(source["source"] == "notes.md" for source in response.json()["sources"])
