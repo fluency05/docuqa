@@ -76,7 +76,7 @@ class InMemoryVectorStore:
         )
 
     @classmethod
-    def load(cls, directory: Path) -> "InMemoryVectorStore":
+    def load(cls, directory: Path) -> InMemoryVectorStore:
         vectors_path = directory / "vectors.npy"
         chunks_path = directory / "chunks.json"
         vectors = np.load(vectors_path) if vectors_path.exists() else None
@@ -94,7 +94,9 @@ class InMemoryVectorStore:
         removed = len(self._chunks) - sum(keep)
         if removed:
             keep_mask = np.asarray(keep, dtype=bool)
-            self._chunks = [chunk for chunk, keep_it in zip(self._chunks, keep) if keep_it]
+            self._chunks = [
+                chunk for chunk, keep_it in zip(self._chunks, keep, strict=True) if keep_it
+            ]
             self._vectors = self._vectors[keep_mask] if self._chunks else None
         return removed
 

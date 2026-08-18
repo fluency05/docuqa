@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Optional
-
 import typer
 from rich.console import Console
 from rich.panel import Panel
@@ -84,7 +82,7 @@ def ingest(
 @app.command()
 def ask(
     question: str = typer.Argument(..., help="The question to answer."),
-    top_k: Optional[int] = typer.Option(None, "--top-k", help="Number of chunks to retrieve."),
+    top_k: int | None = typer.Option(None, "--top-k", help="Number of chunks to retrieve."),
     offline: bool = typer.Option(False, "--offline", help=_OFFLINE_HELP),
 ) -> None:
     """Ask a single question against the indexed documents."""
@@ -123,7 +121,7 @@ def chat(
 @app.command("eval")
 def eval_cmd(
     dataset: str = typer.Argument(..., help="Path to a JSON evaluation dataset."),
-    top_k: Optional[int] = typer.Option(None, "--top-k", help="Chunks to retrieve per query."),
+    top_k: int | None = typer.Option(None, "--top-k", help="Chunks to retrieve per query."),
     offline: bool = typer.Option(False, "--offline", help=_OFFLINE_HELP),
 ) -> None:
     """Evaluate retrieval quality (Recall@k and MRR) against a dataset."""

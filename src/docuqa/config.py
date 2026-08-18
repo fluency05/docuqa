@@ -40,7 +40,7 @@ class Config:
     ollama_base_url: str = "http://localhost:11434"
 
     @classmethod
-    def from_env(cls) -> "Config":
+    def from_env(cls) -> Config:
         """Build a :class:`Config` from environment variables / ``.env``."""
         load_dotenv()
         return cls(
